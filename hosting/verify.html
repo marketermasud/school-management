@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0e1a31">
+<title>ডকুমেন্ট যাচাই</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body{background:var(--side);min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:6vh 16px}
+  .vcard{width:100%;max-width:520px;background:var(--card);border-radius:22px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.35)}
+  .vtop{padding:26px 28px 22px;border-bottom:1px solid var(--line);display:flex;gap:14px;align-items:center}
+  .vbadge{display:flex;gap:12px;align-items:center;padding:16px 28px;font-weight:500}
+  .vbadge .ico{width:26px;height:26px}
+  .ok{background:var(--pos-soft);color:var(--pos)} .warn{background:var(--warn-soft);color:var(--warn)} .bad{background:var(--neg-soft);color:var(--neg)}
+  .vbody{padding:22px 28px 26px}
+  .vbadge .vtick .ico{width:26px;height:26px}
+</style>
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<div class="vcard view-enter" id="v"></div>
+<div class="toasts" id="toasts"></div>
+<script src="assets/v.js"></script>
+</body>
+</html>
