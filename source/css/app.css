@@ -11784,7 +11784,7 @@ fieldset:disabled .btn {
   --r-card: 16px;
   --r-panel: 20px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --font: "Hind Siliguri", system-ui, sans-serif;
+  --font: "Noto Sans Bengali", system-ui, sans-serif;
   --shadow-s:
     0 1px 2px rgba(16, 24, 40, 0.05), 0 1px 3px rgba(16, 24, 40, 0.04);
   --shadow-f: 0 12px 32px rgba(16, 24, 40, 0.12);
@@ -14090,7 +14090,7 @@ input[type="month"].form-control {
   position: relative;
   overflow: hidden;
   font-family:
-    Hind Siliguri,
+    "Noto Sans Bengali",
     sans-serif;
   font-size: 10.5pt;
   line-height: 1.45;
@@ -14107,7 +14107,7 @@ input[type="month"].form-control {
 .serif {
   font-family:
     "Noto Serif Bengali",
-    Hind Siliguri,
+    "Noto Sans Bengali",
     serif;
 }
 .sheet.split-v {
@@ -14206,7 +14206,7 @@ input[type="month"].form-control {
 .dh .nm {
   font-family:
     "Noto Serif Bengali",
-    Hind Siliguri,
+    "Noto Sans Bengali",
     serif;
   font-weight: 600;
   font-size: 17pt;
@@ -14279,7 +14279,7 @@ input[type="month"].form-control {
   align-self: center;
   font-family:
     "Noto Serif Bengali",
-    Hind Siliguri,
+    "Noto Sans Bengali",
     serif;
   font-weight: 600;
   font-size: 22pt;
@@ -14468,7 +14468,7 @@ input[type="month"].form-control {
 .cert .body {
   font-family:
     "Noto Serif Bengali",
-    Hind Siliguri,
+    "Noto Sans Bengali",
     serif;
   font-size: 13pt;
   line-height: 2.25;

@@ -814,6 +814,27 @@
             B
           );
         },
+        async applyStaff(V) {
+          const L = d.currentUser;
+          if (!L) throw { code: "auth/user-not-found" };
+          return (
+            await n
+              .collection("staff")
+              .doc(L.uid)
+              .set({
+                ...Q(V),
+                uid: L.uid,
+                email: L.email || "",
+                status: "pending",
+                classes: [],
+                subjects: [],
+                teacherId: "",
+                at: new Date().toISOString(),
+                u: v.serverTimestamp(),
+              }),
+            L.uid
+          );
+        },
         async myStaff(L) {
           const q = await n.collection("staff").doc(L).get();
           if (!q.exists) return null;
@@ -2132,7 +2153,7 @@
       "auth/wrong-password": "ইমেইল বা পাসওয়ার্ড মেলেনি",
       "auth/user-not-found": "ইমেইল বা পাসওয়ার্ড মেলেনি",
       "auth/invalid-email": "ইমেইল ঠিকানা সঠিক নয়",
-      "auth/email-already-in-use": "এই ইমেইল দিয়ে আগেই অ্যাকাউন্ট আছে",
+      "auth/email-already-in-use": "এই ইমেইল দিয়ে আগেই অ্যাকাউন্ট আছে। লগইন পেজ থেকে সেই পাসওয়ার্ড দিয়ে লগইন করুন, তারপর আবার আবেদন করতে পারবেন",
       "auth/weak-password": "পাসওয়ার্ড অন্তত ৬ অক্ষরের দিন",
       "auth/network-request-failed": "ইন্টারনেট সংযোগ পাওয়া যায়নি",
       "auth/too-many-requests": "অনেকবার চেষ্টা হয়েছে, কিছুক্ষণ পরে আবার চেষ্টা করুন",
@@ -2267,11 +2288,13 @@
     "হিসাবরক্ষক",
     "লাইব্রেরিয়ান",
   ];
-  function Re() {
+  function Re(cur) {
     let t = "";
     (ps(
-      "শিক্ষক হিসেবে আবেদন",
-      "নিজের তথ্য দিয়ে আবেদন করুন। প্রধান শিক্ষক অনুমোদন দিলে এই ইমেইল আর পাসওয়ার্ড দিয়ে লগইন করতে পারবেন",
+      cur ? "আবার আবেদন করুন" : "শিক্ষক হিসেবে আবেদন",
+      cur
+        ? `${m(cur.email || "")} · এই অ্যাকাউন্টের আগের আবেদন মুছে ফেলা হয়েছে বা এখনো আবেদন করা হয়নি। নিজের তথ্য দিয়ে আবার আবেদন করুন, প্রধান শিক্ষক অনুমোদন দিলে ভেতরে ঢুকতে পারবেন`
+        : "নিজের তথ্য দিয়ে আবেদন করুন। প্রধান শিক্ষক অনুমোদন দিলে এই ইমেইল আর পাসওয়ার্ড দিয়ে লগইন করতে পারবেন",
       `
     <form id="suForm" autocomplete="off">
       <div class="photo-pick mb-3"><span id="suPv">${u.avatar("", "", "lg")}</span><label class="btn btn-ghost mb-0">${M("upload", "ico-16")} ছবি<input type="file" accept="image/*" id="suPh" hidden></label></div>
@@ -2283,12 +2306,16 @@
         ${u.inp("qualification", "শিক্ষাগত যোগ্যতা", "", "", "col-6")}${u.inp("blood", "রক্তের গ্রুপ", "", "", "col-6")}
         ${u.inp("address", "ঠিকানা", "", "", "col-12")}
       </div>
-      <div class="fsec mt-3">লগইনের তথ্য</div>
-      <div class="mb-3"><label class="form-label">ইমেইল *</label><input class="form-control" type="email" name="email" required autocomplete="username"><div class="hint">পাসওয়ার্ড ভুলে গেলে এই ইমেইলে বদলানোর লিংক যাবে</div></div>
+      ${
+        cur
+          ? '<div class="mb-4"></div>'
+          : `<div class="fsec mt-3">লগইনের তথ্য</div>
+      <div class="mb-3"><label class="form-label">ইমেইল *</label><input class="form-control" type="email" name="email" required autocomplete="username"><div class="hint">পাসওয়ার্ড ভুলে গেলে এই ইমেইলে বদলানোর লিংক যাবে। আগে এই ইমেইলে অ্যাকাউন্ট খুলে থাকলে লগইন পেজ থেকে লগইন করুন, সেখান থেকে আবার আবেদন করা যাবে</div></div>
       <div class="row g-3 mb-4"><div class="col-6"><label class="form-label">পাসওয়ার্ড *</label><input class="form-control" type="password" name="password" required minlength="6" autocomplete="new-password"></div>
-      <div class="col-6"><label class="form-label">আবার লিখুন *</label><input class="form-control" type="password" name="password2" required minlength="6" autocomplete="new-password"></div></div>
+      <div class="col-6"><label class="form-label">আবার লিখুন *</label><input class="form-control" type="password" name="password2" required minlength="6" autocomplete="new-password"></div></div>`
+      }
       <button class="btn btn-primary btn-lg w-100">আবেদন জমা দিন</button><div class="err" id="err"></div>
-      <div class="text-center mt-2 small-t"><a href="#" id="toLogin">লগইন পেজে ফিরে যান</a></div>
+      <div class="text-center mt-2 small-t"><a href="#" id="toLogin">${cur ? "লগআউট" : "লগইন পেজে ফিরে যান"}</a></div>
     </form>`,
       "আপনার শ্রেণির হাজিরা, নম্বর আর ফি <em>এক জায়গায়</em>",
     ),
@@ -2296,12 +2323,25 @@
         const e = s.target.files[0];
         e && ((t = await u.readImage(e, 320)), (r("#suPv").innerHTML = u.avatar("", t, "lg")));
       }),
-      (r("#toLogin").onclick = (s) => {
-        (s.preventDefault(), ss());
+      (r("#toLogin").onclick = async (s) => {
+        (s.preventDefault(), cur ? (await at.signOut(), Ht()) : ss());
       }),
       (r("#suForm").onsubmit = async (s) => {
         s.preventDefault();
         const e = u.formData(s.target);
+        if (cur) {
+          u.busy(true, "আবেদন পাঠানো হচ্ছে…");
+          try {
+            return (
+              await at.applyStaff({ ...e, photo: t }),
+              u.busy(false),
+              u.success("আবেদন জমা হয়েছে", "প্রধান শিক্ষকের অনুমোদনের পর ভেতরে ঢুকতে পারবেন"),
+              Ht()
+            );
+          } catch (d) {
+            return (u.busy(false), (r("#err").textContent = Ct(d)));
+          }
+        }
         if (e.password !== e.password2) return (r("#err").textContent = "দুটি পাসওয়ার্ড মেলেনি");
         const { email: a, password: i, password2: c, ...l } = e;
         u.busy(true, "আবেদন পাঠানো হচ্ছে…");
@@ -2791,15 +2831,9 @@
       try {
         a = await $.openLive("admin", s.uid);
       } catch (i) {
-        return (
-          await at.signOut(),
-          jt(false),
-          i && i.code === "permission-denied"
-            ? ss(
-                `এই অ্যাকাউন্টের অনুমতি নেই। শিক্ষক হলে "আবেদন করুন" থেকে আবেদন করুন। অ্যাডমিন হলে Firestore রুলসে এই UID দেখুন: ${s.uid}`,
-              )
-            : ss(Ct(i))
-        );
+        return i && i.code === "permission-denied"
+          ? (jt(false), $.close(), Re(s))
+          : (await at.signOut(), jt(false), ss(Ct(i)));
       }
       if ((oe(s.uid, s.email), !a)) return (jt(false), Fe());
       (us(), goLive(s.uid));
@@ -7551,6 +7585,22 @@
           }),
       ));
     const l = r("#stBody");
+    l.addEventListener("click", async (ev) => {
+      const b = ev.target.closest("[data-rm]");
+      if (!b) return;
+      const n = s.find((p) => p.uid === b.dataset.rm);
+      if (!n) return;
+      const nm = Qt(n).name || n.name || n.email || "";
+      (await u.confirm(
+        `${m(nm)}-এর শিক্ষক অ্যাকাউন্ট (${m(n.email || "")}) মুছে যাবে। তিনি আর ভেতরে ঢুকতে পারবেন না। চাইলে একই ইমেইল আর পাসওয়ার্ড দিয়ে লগইন করে নতুন করে আবেদন করতে পারবেন। শিক্ষক তালিকার তথ্য ও আগের কাজের রেকর্ড থেকে যাবে`,
+        "অ্যাকাউন্ট মুছুন",
+      )) &&
+        ((_().staff = (_().staff || []).filter((p) => p.uid !== n.uid)),
+        $.save(),
+        vt("delete", `শিক্ষক অ্যাকাউন্ট মুছে ফেলা: ${nm} (${n.email || ""})`),
+        u.toast("শিক্ষক অ্যাকাউন্ট মুছে ফেলা হয়েছে"),
+        C());
+    });
     zt === "pending"
       ? ((l.innerHTML = a.length
           ? `<div class="row g-3 stagger">${a
@@ -7558,7 +7608,7 @@
                 (d) => `<div class="col-md-6 col-xl-4"><div class="card-x card-pad h-100 d-flex flex-column">
       <div class="d-flex gap-3 align-items-center mb-3">${u.avatar(d.name, d.photo, "lg")}<div style="min-width:0"><h3 style="font-size:17px">${m(d.name)}</h3><div class="sec small-t">${m(d.designation || "")}${d.subject ? " · " + m(d.subject) : ""}</div><div class="muted small-t">আবেদন: ${d.at ? o.dateS(d.at.slice(0, 10)) : ""}</div></div></div>
       <dl class="kv small-t mb-3" style="grid-template-columns:110px 1fr"><dt>মোবাইল</dt><dd>${m(o.bd(d.phone || "—"))}</dd><dt>ইনডেক্স</dt><dd>${m(o.bd(d.indexNo || "—"))}</dd><dt>ইমেইল</dt><dd class="text-truncate">${m(d.email || "")}</dd></dl>
-      <div class="d-flex gap-2 mt-auto"><button class="btn btn-primary flex-fill" data-ap="${d.uid}">${M("check", "ico-16")} যাচাই ও অনুমোদন</button><button class="btn btn-ghost" data-rj="${d.uid}">বাতিল</button></div></div></div>`,
+      <div class="d-flex gap-2 mt-auto"><button class="btn btn-primary flex-fill" data-ap="${d.uid}">${M("check", "ico-16")} যাচাই ও অনুমোদন</button><button class="btn btn-ghost" data-rj="${d.uid}">বাতিল</button><button class="btn btn-quiet btn-icon" style="color:var(--neg)" data-rm="${d.uid}" aria-label="অ্যাকাউন্ট মুছুন" title="অ্যাকাউন্ট মুছুন">${M("trash", "ico-16")}</button></div></div></div>`,
               )
               .join("")}</div>`
           : `<div class="card-x">${u.empty('নতুন কোনো আবেদন নেই। শিক্ষকরা লগইন পেজের "আবেদন করুন" থেকে আবেদন করলে এখানে দেখাবে', "shield")}</div>`),
@@ -7593,7 +7643,7 @@
             .join(", ") || "—"
         }</td>
         <td class="hide-m sec small-t">${p ? `${m(te[p.type] || p.type)} · ${o.dateS(p.at.slice(0, 10))}` : "—"}</td>
-        <td class="r text-nowrap"><button class="btn btn-ghost btn-sm" data-as="${d.uid}">দায়িত্ব</button> <button class="btn btn-quiet btn-sm" data-off="${d.uid}">বন্ধ করুন</button></td></tr>`;
+        <td class="r text-nowrap"><button class="btn btn-ghost btn-sm" data-as="${d.uid}">দায়িত্ব</button> <button class="btn btn-quiet btn-sm" data-off="${d.uid}">বন্ধ করুন</button> <button class="btn btn-quiet btn-sm btn-icon" style="color:var(--neg)" data-rm="${d.uid}" aria-label="অ্যাকাউন্ট মুছুন" title="অ্যাকাউন্ট মুছুন">${M("trash", "ico-16")}</button></td></tr>`;
               })
               .join("")
           : `<tr><td colspan="6">${u.empty("এখনো কোনো সক্রিয় শিক্ষক অ্যাকাউন্ট নেই", "teachers")}</td></tr>`
@@ -7634,22 +7684,7 @@
               (d) => (d.onclick = () => ga(_().requests.find((n) => n.id === d.dataset.rq))),
             ))
           : ((l.innerHTML = `<div class="card-x">${c.length ? c.map((d) => `<div class="list-row">${u.avatar(d.name, d.photo)}<div class="flex-grow-1"><div>${m(Qt(d).name || d.name)}</div><div class="muted small-t">${m(d.email || "")}</div></div><span class="tag ${d.status === "rejected" ? "r" : ""}">${d.status === "rejected" ? "আবেদন বাতিল" : "বন্ধ"}</span><button class="btn btn-ghost btn-sm" data-on="${d.uid}">${d.status === "rejected" ? "আবার যাচাই করুন" : "আবার চালু করুন"}</button><button class="btn btn-quiet btn-sm" style="color:var(--neg)" data-rm="${d.uid}">${M("trash", "ico-16")} অ্যাকাউন্ট মুছুন</button></div>`).join("") : u.empty("কোনো বন্ধ অ্যাকাউন্ট নেই", "check")}</div>
-      <div class="hint mt-2">অ্যাকাউন্ট বন্ধ বা মুছে ফেলার পরেই "শিক্ষক ও কর্মচারী" তালিকা থেকে ওই শিক্ষকের তথ্য মোছা যাবে</div>`),
-            T("[data-rm]", l).forEach(
-              (d) =>
-                (d.onclick = async () => {
-                  const n = s.find((p) => p.uid === d.dataset.rm);
-                  (await u.confirm(
-                    `${m(Qt(n).name || n.name)}-এর লগইন অ্যাকাউন্ট স্থায়ীভাবে মুছে যাবে। তিনি আর লগইন করতে পারবেন না। শিক্ষক তালিকার তথ্য ও আগের কাজের রেকর্ড থেকে যাবে`,
-                    "অ্যাকাউন্ট মুছুন",
-                  )) &&
-                    ((n.status = "removed"),
-                    (n.removedAt = new Date().toISOString()),
-                    $.save(),
-                    vt("delete", `শিক্ষক অ্যাকাউন্ট মুছে ফেলা: ${Qt(n).name || n.name} (${n.email || ""})`),
-                    C());
-                }),
-            ),
+      <div class="hint mt-2">অ্যাকাউন্ট বন্ধ বা মুছে ফেলার পরেই "শিক্ষক ও কর্মচারী" তালিকা থেকে ওই শিক্ষকের তথ্য মোছা যাবে। ভুল হলে অ্যাকাউন্ট মুছে দিন, শিক্ষক একই ইমেইল দিয়ে লগইন করে আবার আবেদন করতে পারবেন</div>`),
             T("[data-on]", l).forEach(
               (d) =>
                 (d.onclick = () => {
