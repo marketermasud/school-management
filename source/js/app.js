@@ -1,6 +1,7 @@
 (() => {
   "use strict";
   const SCHOOL_NAME = "Parkhidirpur High School";
+  const DEF_CUST_FEES = ["বিদ্যুৎ বিল", "ক্রীড়া ফি", "লাইব্রেরি ফি", "বিজ্ঞানাগার ফি", "পরিচয়পত্র ফি", "জরিমানা"];
   const qe = {
       dashboard:
         '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
@@ -1081,6 +1082,7 @@
               "অন্যান্য",
             ],
             incomeCats: ["শিক্ষার্থী ফি", "সরকারি অনুদান", "দান", "অন্যান্য"],
+            customFeeNames: [...DEF_CUST_FEES],
             docs: {
               signLabel: "প্রধান শিক্ষকের স্বাক্ষর ও সিল",
               classTeacherLabel: "শ্রেণি শিক্ষকের স্বাক্ষর",
@@ -1138,6 +1140,7 @@
           x.settings.classes.forEach((S) => {
             S.teacherBySection || (S.teacherBySection = {});
           }),
+          x.settings.customFeeNames || (x.settings.customFeeNames = [...DEF_CUST_FEES]),
           x.settings._feeY ||
             ((x.settings._feeY = 1),
             (x.settings.feeHeads || []).forEach((S) => {
@@ -5223,6 +5226,11 @@
                 : `<div class="d-flex align-items-center gap-3 mb-2"><label class="check flex-grow-1" style="margin:0"><input type="checkbox" data-h="${S.id}"> ${m(S.name)}${S.type === "yearly" ? ' <span class="muted small-t">(বছরে একবার)</span>' : ""}</label><input class="form-control form-control-sm num" style="width:120px" data-ha="${S.id}" value="${S.amounts[s.classId] || 0}"></div>`;
             })
             .join("")}
+          <div class="fsec">কাস্টম ফি <span class="muted small-t" style="font-weight:400">· নিজে নাম ও টাকা লিখুন</span></div>
+          ${(E().customFeeNames || []).length ? `<div class="d-flex flex-wrap gap-1 mb-2">${E().customFeeNames.map((S) => `<button type="button" class="tag b" style="border:0;cursor:pointer" data-qf="${m(S)}">+ ${m(S)}</button>`).join("")}</div>` : ""}
+          <datalist id="custFeeList">${[...(E().customFeeNames || []), ...E().feeHeads.map((S) => S.name)].map((S) => `<option value="${m(S)}">`).join("")}</datalist>
+          <div id="custRows"></div>
+          <button type="button" class="btn btn-ghost btn-sm" id="addCust">${M("plus", "ico-16")} আরো ঘর যোগ করুন</button>
           <div class="row g-3 mt-1">
             ${u.inp("discount", "ছাড় (টাকা)", 0, 'type="number" min="0" id="fdisc"', "col-md-3")}
             ${u.sel("method", "মাধ্যম", ["নগদ", "বিকাশ", "নগদ (মোবাইল)", "রকেট", "ব্যাংক"], "নগদ", "col-md-3", 'id="fmeth"')}
@@ -5230,8 +5238,29 @@
             ${u.inp("note", "মন্তব্য", "", 'id="fnote"', "col-md-3")}
           </div>`),
               T("input", r("#feeBox", d)).forEach((S) => S.addEventListener("input", h)),
+              (r("#addCust", d).onclick = () => addCustRow("")),
+              T("[data-qf]", d).forEach((S) => (S.onclick = () => addCustRow(S.dataset.qf))),
               h());
           },
+          addCustRow = (nm) => {
+            const w = document.createElement("div");
+            ((w.className = "d-flex align-items-center gap-2 mb-2"),
+              (w.dataset.cr = "1"),
+              (w.innerHTML = `<input class="form-control form-control-sm flex-grow-1" data-cn list="custFeeList" placeholder="ফি-এর নাম, যেমন বিদ্যুৎ বিল" value="${m(nm)}"><input class="form-control form-control-sm num" style="width:120px" data-ca placeholder="টাকা" inputmode="numeric"><button type="button" class="btn btn-quiet btn-sm btn-icon" data-cx aria-label="সরান">${M("trash", "ico-16")}</button>`),
+              r("#custRows", d).appendChild(w),
+              T("input", w).forEach((S) => S.addEventListener("input", h)),
+              (r("[data-cx]", w).onclick = () => {
+                (w.remove(), h());
+              }),
+              r(nm ? "[data-ca]" : "[data-cn]", w).focus());
+          },
+          custItems = () =>
+            T("[data-cr]", d)
+              .map((w) => ({
+                label: r("[data-cn]", w).value.trim(),
+                amount: +o.en(r("[data-ca]", w).value) || 0,
+              }))
+              .filter((w) => w.label || w.amount),
           g = () => {
             if (!s) return [];
             const y = Bs(),
@@ -5254,6 +5283,9 @@
                   session: String(i),
                 });
               }),
+              custItems()
+                .filter((x) => x.label && x.amount > 0)
+                .forEach((x) => f.push({ headId: "custom", label: x.label, amount: x.amount, custom: true, session: String(i) })),
               f
             );
           },
@@ -5267,6 +5299,8 @@
         let b = false;
         const k = async (y) => {
           if (b) return;
+          const cbad = custItems().find((x) => !x.label || !(x.amount > 0));
+          if (cbad) return u.toast(cbad.label ? `"${cbad.label}" এর টাকার পরিমাণ লিখুন` : "কাস্টম ফি-এর নাম লিখুন", "warn");
           const f = g();
           if (!f.length) return u.toast("অন্তত একটি মাস বা খাত বাছুন", "warn");
           const dup = f.find((x) => {
@@ -7025,6 +7059,7 @@
     ["subjects", "বিষয়", "library"],
     ["grading", "গ্রেডিং", "award"],
     ["periods", "পিরিয়ড ও সময়", "clock"],
+    ["fees", "ফি-এর খাত", "wallet"],
     ["lists", "তালিকা", "list"],
     ["fields", "অতিরিক্ত তথ্যঘর", "plus"],
     ["admin", "অ্যাডমিন", "lock"],
@@ -7308,6 +7343,27 @@
             }));
         };
         s();
+      },
+      fees(t) {
+        E().customFeeNames || (E().customFeeNames = [...DEF_CUST_FEES]);
+        const L = E().customFeeNames;
+        ((t.innerHTML = `${ea()}
+      <div class="card-x mt-3"><div class="card-head"><h3>কাস্টম ফি-এর নাম</h3><span class="right">ফি আদায়ের সময় এক ক্লিকে ঘর হিসেবে যোগ হবে, টাকা হাতে লিখবেন</span></div>
+      <div class="card-pad d-flex flex-wrap align-items-center">${L.map((l, i) => `<span class="chip-edit">${m(l)}<button data-cf="${i}" aria-label="সরান">${M("x", "ico-16")}</button></span>`).join("")}
+      <input class="form-control form-control-sm ms-1" style="width:220px;height:28px" placeholder="যেমন বিদ্যুৎ বিল, তারপর Enter" id="cfAdd"></div>
+      <div class="card-pad pt-0 hint">নির্দিষ্ট হারে প্রতি শ্রেণিতে নিতে চাইলে উপরের তালিকায় "খাত যোগ করুন" দিয়ে খাত বানান। হার ঠিক না থাকলে বা মাঝে মাঝে লাগলে এখানে নাম রাখুন</div></div>`),
+          aa(t),
+          (r("#cfAdd", t).onkeydown = (i) => {
+            if (i.key !== "Enter") return;
+            const c = i.target.value.trim();
+            c && !L.includes(c) && (L.push(c), lt("যোগ হয়েছে"), Is.fees(t));
+          }),
+          T("[data-cf]", t).forEach(
+            (a) =>
+              (a.onclick = () => {
+                (L.splice(+a.dataset.cf, 1), lt("সরানো হয়েছে"), Is.fees(t));
+              }),
+          ));
       },
       lists(t) {
         const s = (
