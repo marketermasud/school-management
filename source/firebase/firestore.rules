@@ -2,11 +2,10 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // সুপার অ্যাডমিন = owner/main-এ যাঁর uid আছে
+    // সুপার অ্যাডমিন: শুধু এই UID
     function isOwner() {
       return request.auth != null
-        && exists(/databases/$(database)/documents/owner/main)
-        && get(/databases/$(database)/documents/owner/main).data.uid == request.auth.uid;
+        && request.auth.uid == 'gTelHLOORQWBMkWcUDeTb0ND6du2';
     }
 
     // অনুমোদিত (সক্রিয়) শিক্ষক
@@ -14,17 +13,6 @@ service cloud.firestore {
       return request.auth != null
         && exists(/databases/$(database)/documents/staff/$(request.auth.uid))
         && get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.status == 'active';
-    }
-
-    // মালিক নির্ধারণ: শুধু একবারই তৈরি করা যায়
-    match /owner/{id} {
-      allow get: if true;
-      allow list: if false;
-      allow create: if id == 'main'
-        && request.auth != null
-        && !exists(/databases/$(database)/documents/owner/main)
-        && request.resource.data.uid == request.auth.uid;
-      allow update, delete: if false;
     }
 
     // শিক্ষকের অ্যাকাউন্ট: নিজে আবেদন করবেন, অনুমোদন/বন্ধ/বার্তা অ্যাডমিন দেবেন
