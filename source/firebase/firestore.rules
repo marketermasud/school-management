@@ -2,14 +2,21 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // অ্যাডমিন = প্রথম সেটআপে যিনি অ্যাকাউন্ট খুলেছেন (owner/main-এ তাঁর uid)
+    // সুপার অ্যাডমিন = owner/main-এ যাঁর uid আছে
     function isOwner() {
       return request.auth != null
         && exists(/databases/$(database)/documents/owner/main)
         && get(/databases/$(database)/documents/owner/main).data.uid == request.auth.uid;
     }
 
-    // মালিক নির্ধারণ: শুধু একবারই তৈরি করা যায়, পরে আর বদলানো বা মোছা যায় না
+    // অনুমোদিত (সক্রিয়) শিক্ষক
+    function isTeacher() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/staff/$(request.auth.uid))
+        && get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.status == 'active';
+    }
+
+    // মালিক নির্ধারণ: শুধু একবারই তৈরি করা যায়
     match /owner/{id} {
       allow get: if true;
       allow list: if false;
@@ -20,19 +27,40 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // স্কুলের সব তথ্য: শুধু অ্যাডমিন পড়তে ও লিখতে পারবেন
+    // শিক্ষকের অ্যাকাউন্ট: নিজে আবেদন করবেন, অনুমোদন/বন্ধ/বার্তা অ্যাডমিন দেবেন
+    match /staff/{uid} {
+      allow get: if isOwner() || (request.auth != null && request.auth.uid == uid);
+      allow list: if isOwner();
+      allow create: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.status == 'pending';
+      allow update, delete: if isOwner();
+    }
+
+    // স্কুলের সব তথ্য: অ্যাডমিন সব পারবেন (রিসাইকেল বিন সহ)
     match /schools/{school}/{document=**} {
       allow read, write: if isOwner();
     }
 
-    // QR যাচাই: ক্রমিক নং জানলে যে কেউ একটি ডকুমেন্ট দেখতে পারবে, তালিকা দেখা যাবে না
+    // শিক্ষক যা দেখতে পারবেন
+    match /schools/{school}/{col}/{id} {
+      allow read: if isTeacher() && (
+        col in ['meta', 'students', 'teachers', 'payments', 'notices', 'exams', 'documents',
+                'attendance', 'marks', 'routine', 'counters']
+        || (col == 'requests' && resource.data.uid == request.auth.uid)
+      );
+      allow write: if isTeacher() && (
+        col in ['students', 'attendance', 'marks', 'payments', 'documents', 'log', 'counters']
+        || (col == 'requests' && request.resource.data.uid == request.auth.uid)
+      );
+    }
+
+    // QR যাচাই: ক্রমিক নং জানলে যে কেউ একটি ডকুমেন্ট দেখতে পারবে
     match /verify/{serial} {
       allow get: if true;
       allow list: if false;
-      allow write: if isOwner();
+      allow write: if isOwner() || isTeacher();
     }
 
-    // বাকি সব বন্ধ
     match /{document=**} {
       allow read, write: if false;
     }
